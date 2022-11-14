@@ -1,8 +1,8 @@
-#ifndef GET_LAST_ERROR_AS_STRING
-#define GET_LAST_ERROR_AS_STRING
-
 #include <windows.h>
 #include <string>
+
+#ifndef GET_LAST_ERROR_AS_STRING
+#define GET_LAST_ERROR_AS_STRING
 
 const std::wstring GetLastErrorAsString(const DWORD errorMessageId = GetLastError()){
 	if(errorMessageId == 0) return std::wstring();
