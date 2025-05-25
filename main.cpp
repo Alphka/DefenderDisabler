@@ -25,28 +25,67 @@ void AssertSuccess(const DWORD arg){
 	throw GetLastErrorAsString(arg);
 }
 
-void DisableDefender(const PHKEY phKey, const LPCSTR lpSubKey){
-	const LPCSTR lpValueName = "DisableAntiSpyware";
+void DisableDefender(){
+	HKEY hKey;
 
-	AssertSuccess(RegOpenKeyExA(HKEY_LOCAL_MACHINE, lpSubKey, 0, KEY_ALL_ACCESS, phKey));
+	AssertSuccess(RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender", 0, KEY_ALL_ACCESS, &hKey));
 
 	const uint32_t data = 1;
 
-	AssertSuccess(RegSetValueExA(*phKey, lpValueName, 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+	AssertSuccess(RegSetValueExA(hKey, "DisableAntiSpyware", 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+	AssertSuccess(RegSetValueExA(hKey, "DisableRealtimeMonitoring", 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+	AssertSuccess(RegSetValueExA(hKey, "DisableAntiVirus", 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+	AssertSuccess(RegSetValueExA(hKey, "DisableSpecialRunningModes", 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+	AssertSuccess(RegSetValueExA(hKey, "DisableRoutinelyTakingAction", 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+	AssertSuccess(RegSetValueExA(hKey, "ServiceKeepAlive", 0, REG_DWORD, (LPBYTE) &data, sizeof(data)));
+
+	RegCloseKey(hKey);
 }
 
-void DisableRealTimeProtection(PHKEY phKey){
-	RegCreateKeyExA(*phKey, "Real-Time Protection", 0, 0, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, phKey, 0);
+void DisableRealTimeProtection(){
+	HKEY hKey;
 
-	const HKEY hKey = *phKey;
+	AssertSuccess(RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender", 0, KEY_ALL_ACCESS, &hKey));
+	AssertSuccess(RegCreateKeyExA(hKey, "Real-Time Protection", 0, 0, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, &hKey, 0));
+
 	const uint32_t data = 1;
 	const size_t dataSize = sizeof(data);
 
 	AssertSuccess(RegSetValueExA(hKey, "DisableRealtimeMonitoring", 0, REG_DWORD, (LPBYTE) &data, dataSize));
 	AssertSuccess(RegSetValueExA(hKey, "DisableBehaviorMonitoring", 0, REG_DWORD, (LPBYTE) &data, dataSize));
 	AssertSuccess(RegSetValueExA(hKey, "DisableOnAccessProtection", 0, REG_DWORD, (LPBYTE) &data, dataSize));
-	AssertSuccess(RegSetValueExA(hKey, "DisableOnAccessProtection", 0, REG_DWORD, (LPBYTE) &data, dataSize));
+	AssertSuccess(RegSetValueExA(hKey, "DisableScanOnRealtimeEnable", 0, REG_DWORD, (LPBYTE) &data, dataSize));
 	AssertSuccess(RegSetValueExA(hKey, "DisableIOAVProtection", 0, REG_DWORD, (LPBYTE) &data, dataSize));
+
+	RegCloseKey(hKey);
+}
+
+void DisableSignatureUpdates(){
+	HKEY hKey;
+
+	AssertSuccess(RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender", 0, KEY_ALL_ACCESS, &hKey));
+	AssertSuccess(RegCreateKeyExA(hKey, "Signature Updates", 0, 0, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, &hKey, 0));
+
+	const uint32_t data = 1;
+	const size_t dataSize = sizeof(data);
+
+	AssertSuccess(RegSetValueExA(hKey, "ForceUpdateFromMU", 0, REG_DWORD, (LPBYTE) &data, dataSize));
+
+	RegCloseKey(hKey);
+}
+
+void DisableSpyNet(){
+	HKEY hKey;
+
+	AssertSuccess(RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender", 0, KEY_ALL_ACCESS, &hKey));
+	AssertSuccess(RegCreateKeyExA(hKey, "Spynet", 0, 0, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 0, &hKey, 0));
+
+	const uint32_t data = 1;
+	const size_t dataSize = sizeof(data);
+
+	AssertSuccess(RegSetValueExA(hKey, "DisableBlockAtFirstSeen", 0, REG_DWORD, (LPBYTE) &data, dataSize));
+
+	RegCloseKey(hKey);
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow){
@@ -55,19 +94,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		return EXIT_FAILURE;
 	}
 
-	HKEY hKey;
-	bool isError;
-
 	try{
-		DisableDefender(&hKey, "SOFTWARE\\Policies\\Microsoft\\Windows Defender");
-		DisableRealTimeProtection(&hKey);
+		DisableDefender();
+		DisableRealTimeProtection();
+		DisableSignatureUpdates();
+		DisableSpyNet();
 
 		MessageBoxA(NULL, "Windows Defender disabled.\nRestart your computer to apply configurations.", "Success", MB_OK);
-		RegCloseKey(hKey);
 	}catch(const std::wstring error){
 		MessageBoxW(NULL, L"Error: " + *error.c_str(), L"Operation failed", MB_OK);
-
-		if(hKey) RegCloseKey(hKey);
 
 		return EXIT_FAILURE;
 	}
