@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <cstdint>
 #include <string>
 #include "GetLastErrorAsString.cpp"
 
@@ -102,7 +103,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		MessageBoxA(NULL, "Windows Defender disabled.\nRestart your computer to apply configurations.", "Success", MB_OK);
 	}catch(const std::wstring error){
-		MessageBoxW(NULL, L"Error: " + *error.c_str(), L"Operation failed", MB_OK);
+		MessageBoxW(NULL, (L"Error: " + error).c_str(), L"Operation failed", MB_OK);
 
 		return EXIT_FAILURE;
 	}
